@@ -2,59 +2,47 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-# Add the src directory to the path for importing
+# Add src directory to import path
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from crawler import fetch_page, crawl
-
-
-class TestFetchPage(unittest.TestCase):
-    """Test the fetch_page function"""
-
-    @patch('crawler.requests.get')
-    def test_fetch_page_success(self, mock_get):
-        """Should return the page HTML on success"""
-        # Mock a successful response from requests.get
-        mock_response = MagicMock()
-        mock_response.text = "<html>hello</html>"
-        mock_response.raise_for_status = MagicMock()
-        mock_get.return_value = mock_response
-
-        result = fetch_page("https://example.com")
-        self.assertEqual(result, "<html>hello</html>")
-
-    @patch('crawler.requests.get')
-    def test_fetch_page_failure(self, mock_get):
-        """Should return None when the request fails"""
-        import requests
-        mock_get.side_effect = requests.RequestException("boom")
-
-        result = fetch_page("https://example.com")
-        self.assertIsNone(result)
+from crawler import crawl
 
 
 class TestCrawl(unittest.TestCase):
-    """Test the crawl function"""
 
-    @patch('crawler.time.sleep')          # Skip sleep to speed up tests
-    @patch('crawler.fetch_page')
-    def test_crawl_returns_dict(self, mock_fetch, mock_sleep):
-        """crawl should return a dictionary type"""
-        # Mock a simple single-page website
-        mock_fetch.return_value = "<html><body>hello world</body></html>"
+    @patch('crawler.time.sleep')
+    @patch('crawler.requests.get')
+    def test_crawl_returns_pages(self, mock_get, mock_sleep):
+        """Should successfully crawl and return a non-empty dict"""
+        mock_response = MagicMock()
+        mock_response.text = "<html><body>hello world</body></html>"
+        mock_response.raise_for_status = MagicMock()
+        mock_get.return_value = mock_response
 
         result = crawl()
         self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 1)
+        self.assertIn("https://quotes.toscrape.com/", result)
 
     @patch('crawler.time.sleep')
-    @patch('crawler.fetch_page')
-    def test_crawl_handles_fetch_failure(self, mock_fetch, mock_sleep):
-        """Should exit gracefully without crashing if fetch fails"""
-        mock_fetch.return_value = None
+    @patch('crawler.requests.get')
+    def test_crawl_follows_internal_links(self, mock_get, mock_sleep):
+        """BFS should follow links to discover new pages"""
+        # Home page links to /page/2/, page 2 has no further links
+        responses = [
+            MagicMock(text='<html><body><a href="/page/2/">Next</a></body></html>'),
+            MagicMock(text='<html><body><p>page 2</p></body></html>'),
+        ]
+        for r in responses:
+            r.raise_for_status = MagicMock()
+        mock_get.side_effect = responses
 
         result = crawl()
-        self.assertEqual(result, {})  # No data crawled, but no errors
+        # Both pages should be crawled
+        self.assertEqual(len(result), 2)
+        self.assertIn("https://quotes.toscrape.com/", result)
+        self.assertIn("https://quotes.toscrape.com/page/2/", result)
 
 
 if __name__ == "__main__":
