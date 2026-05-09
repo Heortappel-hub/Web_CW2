@@ -1,6 +1,7 @@
 import time
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 BASE_URL = "https://quotes.toscrape.com/"
 
@@ -23,5 +24,5 @@ for quote in quotes:
 
 next_button = soup.find("li", class_="next")
 next_link = next_button.find("a")["href"]
-full_next_url = BASE_URL + next_link
-print(f"Next page URL: {full_next_url}")
+full_url = urljoin(BASE_URL, next_link)
+print(full_url)
