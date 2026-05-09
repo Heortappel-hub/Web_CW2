@@ -48,3 +48,6 @@ def crawl():
                 frontier.append(link)
 
     return pages
+
+print("Starting crawl...")
+print(crawl())
