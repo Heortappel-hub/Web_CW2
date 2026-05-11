@@ -1,6 +1,6 @@
 from crawler import crawl
 from indexer import build_index
-from search import save_index, load_index
+from search import save_index, load_index, print_word, find_pages
 
 
 def cmd_build():
@@ -47,12 +47,12 @@ def main():
                 if len(parts) < 2:
                     print("Usage: print <word>")
                 else:
-                    cmd_print(index, parts[1])
+                    print_word(index, parts[1])
             elif cmd == "find":
                 if len(parts) < 2:
                     print("Usage: find <word> [word ...]")
                 else:
-                    cmd_find(index, parts[1:])
+                    find_pages(index, parts[1:])
             elif cmd in ("exit", "quit"):
                 break
             else:
