@@ -26,7 +26,7 @@ def crawl():
 
         print(f"Crawling: {current_url}")
 
-        try:
+        try: # Error handling
             response = requests.get(current_url, timeout=10)
             response.raise_for_status()
             html = response.text
